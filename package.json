@@ -1,0 +1,18 @@
+{
+  "name": "final-project",
+  "version": "1.0.0",
+  "description": "backend at chai and code channel",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javascript",
+    "backend",
+    "chai",
+    "and",
+    "code"
+  ],
+  "author": "Sajal Srivastava",
+  "license": "ISC"
+}
