@@ -16,7 +16,19 @@ dotenv.config({
      path: ".env" 
 }); // Load environment variables from .env file
 
-connectDB() // Call the function to connect to MongoDB
+connectDB()// Call the function to connect to MongoDB
+.then(() => {
+    app.on('error', (error) => {
+            console.error("Error in Express server:", error);
+            throw error; // Exit the process with failure
+        });
+    app.listen(process.env.PORT||8000,()=>{
+        console.log(`Server is running on port ${process.env.PORT||8000}`); 
+    })
+})
+.catch((error) => {
+    console.error("MongoDB connection failed:", error);
+});
 
 
 
