@@ -6,8 +6,9 @@
 import dotenv from "dotenv";
 /*import mongooose from "mongoose"
 import DB_NAME from "./constants"; id db connection code have been written here then we would have needed it here*/
-import express from "express";
-const app = express();//app is your backend server.
+// import express from "express";
+// const app = express();//app is your backend server.
+import app from "./app.js";
 import connectDB from "./db/index.js"; // Import the connectDB function from db/index.js
 
 
