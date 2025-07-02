@@ -21,6 +21,7 @@ const registerUser = asyncHandler(async (req, res) =>{
 
     const { username, email, fullname, password } = req.body;
     console.log("email:", email);
+    console.log("req body is",req.body)
 
     // if(fullname===""){//doing this one by one for simplicity
     //     throw new ApiError(400, "Full name is required");
@@ -37,6 +38,8 @@ const registerUser = asyncHandler(async (req, res) =>{
     if(existing_user) {
         throw new ApiError(409, "Username or email already exists");
     }
+
+    console.log(req.files); // Log the files received in the request
 
     const avatarlocalpath = req.files?.avatar?.[0]?.path; // Get the avatar image path from the request
     const coverimagelocalpath = req.files?.coverimage?.[0]?.path; // Get the cover image path from the request
