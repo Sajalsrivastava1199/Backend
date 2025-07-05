@@ -52,12 +52,12 @@ userSchema.pre('save', async function(next) {
     next();
 }); 
 
-userSchema.methods.isPasswordMatch = async function(enteredPassword) {
+userSchema.methods.isPasswordMatch = async function(password) {
     return await bcrypt.compare(password, this.password); // Compare the entered password with the hashed password
 };
 
 
-userSchema.methods.generateAcessToken = function() {
+userSchema.methods.generateAccessToken = function() {
     return jwt.sign(
         { 
             _id: this._id ,
@@ -74,7 +74,7 @@ userSchema.methods.generateRefreshToken = function() {
         {
              _id: this._id 
         },
-        process.env.REFRESH_TOKEN_SECRET, { expiresIn   : process.env.REFRESH_TOKEN_SECRET || '15m'    });
+        process.env.REFRESH_TOKEN_SECRET, { expiresIn   : process.env.REFRESH_TOKEN_EXPIRY || '7d'    });
 }
 
 export const User = mongoose.model('User', userSchema); 
