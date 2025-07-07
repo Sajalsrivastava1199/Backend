@@ -10,12 +10,12 @@ const userSchema = new mongoose.Schema(
             trim: true,
             lowercase: true,
             unique: true,
-            index: true // This will create an index on the name field
+           // index: true // This will create an index on the name field
         },
         email: {
             type: String,
             required: true,
-            unique: true,
+           // unique: true,
             trim: true,
             lowercase: true
         },
@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            index: true // This will create an index on the fullname field
+           // index: true // This will create an index on the fullname field
         },
         avatar: {
             type: String,//cloudinary url:3rd party service to store images

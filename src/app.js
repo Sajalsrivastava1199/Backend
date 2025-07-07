@@ -14,6 +14,7 @@ app.use(express.json({limit:"10kb"})); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true, limit: "10kb" })); // Parse URL-encoded request bodies
 app.use(express.static('public')); // Serve static files from the 'public' directory
 app.use(cookieParser()); // Parse cookies from request headers  
+//app.use(express//)
 
 // routes import
 import userRoutes from './routes/user.routes.js'; // Import user routes
