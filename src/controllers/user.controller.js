@@ -214,7 +214,113 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 })
 
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    //user has to be finded,tbhi toh field mn jake password verify ho pyga,if user is able to change password then
+    //he is already logged in,agr auth.middleware chla h toh cnfrm req.user=user hai and vhns eid mil jygi
+
+    const user = await User.findById(req.user?._id)
+
+    const isPasswordCorrect = await user.isPasswordMatch(oldPassword);
+    if(!isPasswordCorrect) {
+        throw new ApiError(401, "Incorrect old password");
+    }
+        
+    //so now old password is correct,so we can change password
+    user.password = newPassword; // Set the new password
+    await user.save({validateBeforeSave:false}); // Save the updated user document
+
+    return res.status(200).json(
+        new Apiresponse(200, null, "Password changed successfully") // Return response with success message
+    ); 
+       
+}) 
+
+//Suppose hamein current user lena hai,we need to get current user details,so if user is logged in we can get that
+const getCurrentUser = asyncHandler(async (req, res) => {
+    //req.user is set by auth middleware
+    if(!req.user) {
+        throw new ApiError(401, "Unauthorized request: User not logged in");
+    }
+    // Exclude password and refreshToken from the response
+    const currentUser = await User.findById(req.user._id).select("-password -refreshToken");
+    
+    if(!currentUser) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+        new Apiresponse(200, currentUser, "Current user details retrieved successfully") // Return response with user details
+    );
+})
+
+//Updating details
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { fullname,email}= req.body;
+
+    if(!fullname || !email) {
+        throw new ApiError(400, "Full name and email are required to update account details");
+    }
+
+    // Find the user by ID and update the account details
+    const user = await User.findByIdAndUpdate(
+        req.user._id, // Use the user ID from the request object
+        {
+            $set: { 
+                fullname,//either this
+                email:email//or this
+            }
+        }, // Update the fullname and email fields
+        { new: true} // Return the updated document and run validators
+    )
+    //removing password
+    const updateduserdetails = await User.findById(req.user?._id).select("-password"); 
+
+    return res.status(200).json(
+        new Apiresponse(200, updateduserdetails, "Account details updated successfully") // Return response with updated user details
+    );
+
+})
+
+//Updating files,2 middlewares would be used,multer and person who is logged in can only update
+const updateAvatar = asyncHandler(async (req, res) => {
+    const avatarlocalpath = req.file?.path // Get the uploaded file path from the request
+
+    if(!avatarlocalpath) {
+        throw new ApiError(400, "Avatar image is required for update");
+    }
+    // Upload the avatar image to Cloudinary
+    const avatar = await uploadoncloudinary(avatarlocalpath);
+    if(!avatar.url) {
+        throw new ApiError(400, "Failed to upload avatar image");
+    }
+    // Update the user's avatar in the database
+    const user = await User.findByIdAndUpdate(
+        req.user._id, // Use the user ID from the request object
+        {
+            $set: { avatar: avatar.url } // Update the avatar field with the Cloudinary URL
+        },
+        { new: true } // Return the updated document    
+    ).select("-password "); // Exclude password from the response
+
+    return res.status(200).json(
+        new Apiresponse(200, user, "Avatar updated successfully") // Return response with updated user details
+    );
+    
+})
+//Similarly to done for updating cover image
+
+
+
 
 export {
     registerUser,
-    loginuser,logoutUser,refreshAccessToken};  
+    loginuser,
+    logoutUser,
+    refreshAccessToken,
+    getCurrentUser,
+    changeCurrentPassword,
+    generateaccessandrefreshtoken,
+    updateAccountDetails,
+    updateAvatar
+};  
