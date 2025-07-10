@@ -4,6 +4,7 @@ import {User} from "../models/user.models.js"; // Import the User model
 import uploadoncloudinary from '../utils/cloudinary.js';
 import Apiresponse from '../utils/Apiresponse.js';
 import jwt from 'jsonwebtoken'; // Importing jwt for token generation
+import deleteafterupdateavatar from '../utils/Deletecloudinary.js'; // Importing delete function for avatar updates
 
 
 const generateaccessandrefreshtoken = async(userid)=>{
@@ -294,6 +295,18 @@ const updateAvatar = asyncHandler(async (req, res) => {
     if(!avatar.url) {
         throw new ApiError(400, "Failed to upload avatar image");
     }
+
+
+    //Todo:delete old image from Cloudinary
+    // If you want to delete the old avatar image from Cloudinary, you can do so here
+    // For example, you can store the public ID of the old image in the user model
+    const existingUser = await User.findById(req.user._id);
+    if (existingUser?.avatar) {
+        await deleteAfterUpdateAvatar(existingUser.avatar);
+    }
+
+
+
     // Update the user's avatar in the database
     const user = await User.findByIdAndUpdate(
         req.user._id, // Use the user ID from the request object
@@ -311,7 +324,126 @@ const updateAvatar = asyncHandler(async (req, res) => {
 //Similarly to done for updating cover image
 
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    //when we goto any channel we use its url so we will use params
+    const {username} = req.params// Get the username from the request parameters
 
+    if(!username?.trim()) {
+        throw new ApiError(400, "Username is required to get user channel profile");
+    }
+    // Find the user by username
+    //const user = await User.find({ username})
+    //if done by above we will fetch one document and do aggregation
+    //Directly aggregation can also be done ,pipeline are written like User.aggregate([],[],[]) 
+    // and returns array of objects
+    const channel = await User.aggregate([
+        {
+            $match: { username: username?.toLowerCase() } // Match the user by username
+        },//now lookup to be done on that one documenet(supposing it CAC)
+        // Lookup to get the channel details,we will get its subscribers
+        {
+            $lookup:{
+                from:"subscriptions", // Collection to join with
+                localfield:"_id", // Field from the User collection
+                foreignField:"channel", // Field from the Subscription collection,to get subscribers count
+                as:"subscribers" // Name of the field to add in the output document
+            }
+        },
+        //Lookup to get the subscriberdetails,we will get its channel details(how many channel have user subscribed)
+        {
+            $lookup: {
+                from: "subscriptions", // Collection to join with
+                localField: "_id", // Field from the User collection
+                foreignField: "subscriber", // Field from the Subscription collection,to get channels subscribed by user
+                as: "subscribedtoChannels" // Name of the field to add in the output document
+            }
+        },//More additional fields are needed to be added,here subscribers and subscribedtocount is added
+        {
+            $addFields: {
+                subscribersCount: { $size: "$subscribers" }, // Count of subscribers
+                subscribedToChannelsCount: { $size: "$subscribedtoChannels" }, // Count of channels subscribed by user
+                isSubscribed:{
+                    $cond:{
+                        if: {
+                            $in: [req.user?._id, "$subscribers.subscriber"] // Check if the user is subscribed to this channel
+                        },
+                        then: true, // User is subscribed
+                        else: false // User is not subscribed
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                password: 0, // Exclude password from the output
+                refreshToken: 0, // Exclude refresh token from the output
+                __v: 0 // Exclude version key from the output
+            }
+        }
+
+    ])
+
+    //if channel is not found
+    if(!channel || channel.length === 0) {
+        throw new ApiError(404, "Channel not found with this username");
+    }
+
+    // Return the channel profile with subscribers and subscription details
+    return res.status(200).json(
+        new Apiresponse(200, channel[0], "User channel profile retrieved successfully") // Return response with channel profile
+    );
+
+
+})
+
+const getwatchinghistory = asyncHandler(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id:new mongoose.Types.ObjectID(req.user._id) // Match the user by ID
+            }
+        },
+        {
+            $lookup:{
+                from:"videos", // Collection to join with
+                localField:"watchHistory", // Field from the User collection
+                foreignField:"_id", // Field from the Video collection
+                as:"watchHistoryVideos", // Name of the field to add in the output document
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users", // Collection to join with for user details
+                            localField: "owner", // Field from the Video collection
+                            foreignField: "_id", // Field from the User collection
+                            as: "ownerDetails", // Name of the field to add in the output document
+                            pipeline: [
+                                {
+                                    $project:{
+                                        fullname:1, // Include only the fullname field from the owner details
+                                        username:1, // Include only the username field from the owner details
+                                        avatar:1 // Include only the avatar field from the owner details
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        } 
+    ])
+
+    if(!user || user.length === 0) {
+        throw new ApiError(404, "User not found or no watch history available");
+    }
+
+    // Return the user's watch history with video details
+    return res
+    .status(200)
+    .json(
+        new Apiresponse(200, user[0].watchHistoryVideos, "User watch history retrieved successfully") // Return response with watch history videos
+    );
+
+})
 
 export {
     registerUser,
@@ -322,5 +454,7 @@ export {
     changeCurrentPassword,
     generateaccessandrefreshtoken,
     updateAccountDetails,
-    updateAvatar
+    updateAvatar,
+    getUserChannelProfile,
+    getwatchinghistory
 };  
