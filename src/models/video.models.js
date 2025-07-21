@@ -11,16 +11,14 @@ const videoSchema = new mongoose.Schema(
             type: String,
             required: true,
             // trim: true,
-            // lowercase: true,
-            // index: true // This will create an index on the title field
         },
         description: {
             type: String,
             required: true,
             // trim: true
         },
-        videoUrl: {
-            type: String, // URL of the video file
+        duration: {
+            type: Number, // URL of the video file
             required: true
         },
         thumbnailUrl: {
@@ -34,23 +32,12 @@ const videoSchema = new mongoose.Schema(
         },
         viewsCount: {
             type: Number,
-            default: 0
+            default: 0,
+            required:true
         },
         ispublished: {
             type: Boolean,
             default: false // Video is not published by default
-        },  
-        likesCount: {
-            type: Number,
-            default: 0
-        },
-        duration: {
-            type: Number,
-            required: true // Duration in seconds
-        },
-        commentsCount: {
-            type: Number,
-            default: 0
         }
     },{timestamps: true});
 

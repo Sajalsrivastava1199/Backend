@@ -8,7 +8,7 @@ cloudinary.config({
     });
 
 
-const deleteAfterUpdateAvatar = async (url) => {
+const deletefromcloudinary = async (url) => {
     if (!url) return null;
 
     // Extract public_id from URL: last segment without extension
@@ -29,4 +29,4 @@ const deleteAfterUpdateAvatar = async (url) => {
     }
 }
 
-export default deleteafterupdateavatar;
+export default deletefromcloudinary;
